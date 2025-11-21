@@ -77,7 +77,7 @@ if st.button("🔥 PROSES BLUEPRINT JIWA",type="primary"):
         st.markdown(f"<h2 style='color:#ff0066;text-align:center;text-shadow:0 0 10px #ff0066'>✦ TIPE: {tipe}</h2>",unsafe_allow_html=True)
         st.write(f"**Authority:** {authority}")
         st.write(f"**Profile:** {profile}")
-        st.write(f"**Sun Gate Approx:** {((tanggal.toordinal() + jam.hour*3600 + jam.minute*60) %64 +1}")
+        st.write(f"**Sun Gate Approx:** {((tanggal.toordinal() + jam.hour*3600 + jam.minute*60) % 64) + 1}")
         st.markdown(f"<p style='font-size:22px;color:#ff0066;text-align:center;font-style:italic;'>"{insight}"</p>",unsafe_allow_html=True)
 
         # PDF NEON MERAH GLOW (reportlab)
