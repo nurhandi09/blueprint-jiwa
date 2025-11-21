@@ -1,8 +1,15 @@
 import streamlit as st
 from datetime import datetime
 import base64
-from weasyprint import HTML
-
+import streamlit as st
+from datetime import datetime
+import base64
+try:
+    from weasyprint import HTML
+except:
+    st.error("Sedang loading library… tunggu 10 detik lalu refresh ya bro!")
+    st.stop()
+    
 def hitung_tipe(jam):
     h = int(jam.split(":")[0])
     if 6 <= h < 12: return "Projector"
