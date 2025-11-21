@@ -169,7 +169,14 @@ st.caption("Hitungan waktu sudah dikonversi ke UTC (standar Human Design).")
 st.markdown("Masukkan data lahir, lalu klik **Proses Blueprint** untuk melihat ringkasan cepat.")
 
 nama = st.text_input("Nama")
-tanggal = st.date_input("Tanggal Lahir")
+from datetime import date
+
+tanggal = st.date_input(
+    "Tanggal Lahir",
+    min_value=date(1950, 1, 1),
+    max_value=date(2030, 12, 31),
+    value=date(2000, 1, 1)  # default bisa lo ubah bebas
+)
 jam = st.time_input("Jam Lahir (waktu lokal, misal WIB)")
 kota = st.text_input("Kota Lahir (opsional, untuk tampil di PDF)")
 
