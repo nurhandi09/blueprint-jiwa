@@ -5,10 +5,12 @@ import base64
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
-from reportlab.lib.colors import black, red, white
+from reportlab.lib.colors import black, red, white, colors
 
-st.set_page_config(page_title="Blueprint Jiwa",page_icon="🔮",layout="centered")
-
+# ====================================
+# TAMPILAN NEON MERAH HITAM
+# ====================================
+st.set_page_config(page_title="Blueprint Jiwa", page_icon="🔮", layout="centered")
 st.markdown("""
 <style>
     .main {background-color:#000000;}
@@ -16,36 +18,34 @@ st.markdown("""
     .stTextInput>div>div>input {background-color:#1e1e1e;color:white;border:1px solid #ff0066}
     .stDateInput>div>div>div>input {background-color:#1e1e1e;color:white;border:1px solid #ff0066}
     .stTimeInput>div>div>input {background-color:#1e1e1e;color:white;border:1px solid #ff0066}
-</style>""",unsafe_allow_html=True)
+</style>""", unsafe_allow_html=True)
 
-st.image("https://i.imgur.com/5zQJqK.png",width=150) # optional logo kalo lo punya
 st.title("🔮 BLUEPRINT JIWA")
 st.caption("by Yosep × Rhea — Desember 2025 Edition")
 
 col1, col2 = st.columns(2)
 with col1:
-    nama = st.text_input("Nama Lengkap",placeholder="Masukkan nama lengkap")
+    nama = st.text_input("Nama Lengkap", placeholder="Masukkan nama lengkap")
 with col2:
-    kota = st.text_input("Kota Kelahiran",placeholder="Jakarta / Surabaya / dll")
+    kota = st.text_input("Kota Kelahiran", placeholder="Jakarta / Surabaya / dll")
 
 tanggal = st.date_input(
     "Tanggal Lahir",
     min_value=datetime(1950,1,1),
     max_value=datetime(2030,12,31),
-    value=datetime(2000,1,1),
-    help="1950-2030 semua umur masuk"
+    value=datetime(2000,1,1)
 )
 
-jam = st.time_input("Jam Lahir (lokal)",value=datetime.now().time())
+jam = st.time_input("Jam Lahir (lokal)", value=datetime.now().time())
 
-if st.button("🔥 PROSES BLUEPRINT JIWA",type="primary"):
+if st.button("🔥 PROSES BLUEPRINT JIWA", type="primary"):
     if not nama.strip() or not kota.strip():
         st.error("Nama & kota wajib diisi bro!")
     else:
         tgl_str = tanggal.strftime("%d %B %Y")
         jam_str = jam.strftime("%H:%M")
 
-        # Hitungan dummy tapi upgraded (gue tambah Sun Gate approx beneran dari date (mirip real HD)
+        # Hitungan dummy upgraded
         h = jam.hour
         if 6<=h<12: tipe = "Projector"
         elif 12<=h<18: tipe = "Generator"
@@ -65,11 +65,13 @@ if st.button("🔥 PROSES BLUEPRINT JIWA",type="primary"):
 
         insight = {
             "Generator":"Lo itu MESIN ENERGI HIDUP. Kalau lo seneng, semua ikut nyala.",
-            "Manifesting Generator":"Multi-tasking master. Gerak cepet, lompat-llompat, hasil gila.",
+            "Manifesting Generator":"Multi-tasking master. Gerak cepet, lompat-lompat, hasil gila.",
             "Projector":"Lo pembaca manusia level dewa. Energi lo buat NGARAHIN, bukan ngegas sendiri.",
             "Manifestor":"Lo initiator bawaannya. Ngegas dulu, mikir belakangan — itu DNA lo.",
             "Reflector":"Lo cermin masyarakat. Lingkungan bagus = lo bersinar terang."
         }.get(tipe,"Lo langka bro, jalur lo beda sendiri.")
+
+        sun_gate = ((tanggal.toordinal() + jam.hour*3600 + jam.minute*60) % 64) + 1
 
         st.balloons()
         st.success(f"Blueprint {nama.upper()} SELESAI!")
@@ -77,52 +79,38 @@ if st.button("🔥 PROSES BLUEPRINT JIWA",type="primary"):
         st.markdown(f"<h2 style='color:#ff0066;text-align:center;text-shadow:0 0 10px #ff0066'>✦ TIPE: {tipe}</h2>",unsafe_allow_html=True)
         st.write(f"**Authority:** {authority}")
         st.write(f"**Profile:** {profile}")
-        st.write(f"**Sun Gate Approx:** {((tanggal.toordinal() + jam.hour*3600 + jam.minute*60) % 64) + 1}")
+        st.write(f"**Sun Gate Approx:** {sun_gate}")
         st.markdown(f"<p style='font-size:22px;color:#ff0066;text-align:center;font-style:italic;'>"{insight}"</p>",unsafe_allow_html=True)
 
-        # PDF NEON MERAH GLOW (reportlab)
+        # PDF NEON MERAH
         buffer = BytesIO()
         p = canvas.Canvas(buffer, pagesize=letter)
         width, height = letter
         p.setFillColor(black)
         p.rect(0,0,width,height,fill=1,stroke=0)
-
         p.setFillColor(red)
         p.setFont("Helvetica-Bold",48)
         p.drawCentredText(width/2, height-1.5*inch,"BLUEPRINT JIWA")
-
         p.setFont("Helvetica-Bold",36)
         p.drawCentredText(width/2, height-2.5*inch,nama.upper())
-
         p.setFont("Helvetica",18)
         p.drawCentredText(width/2, height-3.2*inch,f"{tgl_str} | {jam_str} | {kota}")
-
         p.setStrokeColor(red)
         p.line(1*inch,height-3.8*inch,width-1*inch,height-3.8*inch)
-
         p.setFillColor(white)
         p.setFont("Helvetica-Bold",28)
         y = height-4.5*inch
         p.drawCentredText(width/2, y, f"TIPE: {tipe}")
-        y -= 50
-        p.drawCentredText(width/2, y, f"AUTHORITY: {authority}")
-        y -= 50
-        p.drawCentredText(width/2, y, f"PROFILE: {profile}")
-        y -= 80
-        p.setFont("Helvetica-Oblique",20)
+        y -= 50; p.drawCentredText(width/2, y, f"AUTHORITY: {authority}")
+        y -= 50; p.drawCentredText(width/2, y, f"PROFILE: {profile}")
+        y -= 50; p.drawCentredText(width/2, y, f"SUN GATE: {sun_gate}")
+        y -= 80; p.setFont("Helvetica-Oblique",20)
         p.drawCentredText(width/2, y, f'"{insight}"')
-        y -= 100
-        p.setFont("Helvetica",12)
-        p.setFillColor(colors.grey)
+        y -= 100; p.setFont("Helvetica",12); p.setFillColor(colors.grey)
         p.drawCentredText(width/2, y, "Powered by Yosep × Rhea • Desember 2025")
-
         p.save()
         buffer.seek(0)
-        pdf_bytes = buffer.read()
 
-        b64 = base64.b64encode(pdf_bytes).decode()
+        b64 = base64.b64encode(buffer.read()).decode()
         href = f'<a href="data:application/pdf;base64,{b64}" download="Blueprint_Jiwa_{nama.replace(" ","_")}.pdf" target="_blank"><button style="background:#ff0066;color:white;padding:20px 50px;border:none;border-radius:50px;font-size:22px;cursor:pointer;margin-top:30px;">📥 DOWNLOAD PDF NEON MERAH</button></a>'
-        st.markdown(href,unsafe_allow_html=True)
-
-**File kedua: `requirements.txt`**
-Create new file → nama `requirements.txt` → isi persis:
+        st.markdown(href, unsafe_allow_html=True)
