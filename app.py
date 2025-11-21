@@ -1,15 +1,13 @@
 import streamlit as st
 from datetime import datetime
 import base64
-import streamlit as st
-from datetime import datetime
-import base64
-try:
-    from weasyprint import HTML
-except:
-    st.error("Sedang loading library… tunggu 10 detik lalu refresh ya bro!")
-    st.stop()
-    
+import io
+import pdfkit
+
+# ====================================
+# LOGIKA BLUEPRINT JIWA (MVP)
+# ====================================
+
 def hitung_tipe(jam):
     h = int(jam.split(":")[0])
     if 6 <= h < 12: return "Projector"
@@ -40,18 +38,22 @@ def insight_yosep(tipe):
     }
     return pesan.get(tipe, "Lo langka bro. Jalur lo beda sendiri.")
 
+# ====================================
+# UI STREAMLIT
+# ====================================
+
 st.set_page_config(page_title="Blueprint Jiwa", page_icon="🔮")
 st.title("🔮 BLUEPRINT JIWA")
 st.caption("by Yosep × Rhea — MVP Desember 2025")
 
 nama = st.text_input("Nama Lengkap")
-tanggal = st.date_input("Tanggal Lahir", datetime(2000, 1, 1))
-jam = st.time_input("Jam Lahir (lokal)", value=datetime.now())
+tanggal = st.date_input("Tanggal Lahir", value=datetime(2000, 1, 1))
+jam = st.time_input("Jam Lahir (lokal)", value=datetime.now().time())
 kota = st.text_input("Kota Kelahiran")
 
-if st.button("🔥 PROSES BLUEPRINT JIWA", type="primary"):
+if st.button("PROSES BLUEPRINT JIWA", type="primary"):
     if not nama or not kota:
-        st.error("Nama & kota wajib diisi bro!")
+        st.error("Nama & kota wajib diisi ya bro!")
     else:
         tgl_str = tanggal.strftime("%Y-%m-%d")
         jam_str = jam.strftime("%H:%M")
@@ -69,31 +71,36 @@ if st.button("🔥 PROSES BLUEPRINT JIWA", type="primary"):
         st.write(f"**Profile:** {profile}")
         st.write(f"**Insight Yosep:** {insight}")
 
-        html_content = f"""
+        # PDF NEON MERAH
+        html = f"""
         <html>
         <head>
             <style>
-                body {{font-family: Arial; background: #000; color: white; padding: 50px; text-align: center;}}
-                h1 {{color: #ff0066; text-shadow: 0 0 20px #ff0066;}}
-                h2 {{color: #ff3366;}}
-                hr {{border: 1px solid #ff0066;}}
+                body {{font-family: Arial; background:#000; color:white; padding:50px; text-align:center;}}
+                h1 {{color:#ff0066; text-shadow:0 0 20px #ff0066; font-size:50px;}}
+                h2 {{color:#ff3366;}}
+                hr {{border:2px solid #ff0066;}}
             </style>
         </head>
         <body>
-            <h1>🔮 BLUEPRINT JIWA</h1>
+            <h1>BLUEPRINT JIWA</h1>
             <h2>{nama.upper()}</h2>
             <p>{tgl_str} | {jam_str} | {kota}</p>
             <hr>
             <h2>TIPE: {tipe}</h2>
             <h2>AUTHORITY: {authority}</h2>
             <h2>PROFILE: {profile}</h2>
-            <p style="font-size:18px;">"{insight}"</p>
-            <p style="color:#666;">Powered by Yosep × Rhea • 2025</p>
+            <p style="font-size:20px;">"{insight}"</p>
+            <p style="color:#666; margin-top:50px;">Powered by Yosep × Rhea • 2025</p>
         </body>
         </html>
         """
 
-        pdf = HTML(string=html_content).write_pdf()
-        b64 = base64.b64encode(pdf).decode()
-        href = f'<a href="data:application/pdf;base64,{b64}" download="Blueprint_Jiwa_{nama}.pdf">📥 DOWNLOAD PDF SEKARANG</a>'
+        # Generate PDF
+        pdf_buffer = io.BytesIO()
+        pdfkit.from_string(html, pdf_buffer)
+        pdf_bytes = pdf_buffer.getvalue()
+        b64 = base64.b64encode(pdf_bytes).decode()
+
+        href = f'<a href="data:application/pdf;base64,{b64}" download="Blueprint_Jiwa_{nama}.pdf"><button style="background:#ff0066; color:white; padding:15px 40px; border:none; border-radius:50px; font-size:20px; cursor:pointer;">DOWNLOAD PDF NEON</button></a>'
         st.markdown(href, unsafe_allow_html=True)
