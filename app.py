@@ -11,11 +11,14 @@ from reportlab.lib.colors import black, red, white, colors
 # TAMPILAN NEON MERAH HITAM
 # ====================================
 st.set_page_config(page_title="Blueprint Jiwa", page_icon="🔮", layout="centered")
-st.markdown(f"""
-        <p style="font-size:22px;color:#ff0066;text-align:center;font-style:italic;margin:30px 0;">
-        "{insight}"
-        </p>
-        """, unsafe_allow_html=True)
+st.markdown("""
+<style>
+    .main {background-color:#000000;}
+    .stButton>button {background:#ff0066;color:white;width:100%;height:60px;font-size:22px;border-radius:50px;}
+    .stTextInput>div>div>input {background-color:#1e1e1e;color:white;border:1px solid #ff0066}
+    .stDateInput>div>div>div>input {background-color:#1e1e1e;color:white;border:1px solid #ff0066}
+    .stTimeInput>div>div>input {background-color:#1e1e1e;color:white;border:1px solid #ff0066}
+</style>""", unsafe_allow_html=True)
 
 st.title("🔮 BLUEPRINT JIWA")
 st.caption("by Yosep × Rhea — Desember 2025 Edition")
@@ -77,7 +80,7 @@ if st.button("🔥 PROSES BLUEPRINT JIWA", type="primary"):
         st.write(f"**Authority:** {authority}")
         st.write(f"**Profile:** {profile}")
         st.write(f"**Sun Gate Approx:** {sun_gate}")
-        st.markdown(f"<p style='font-size:22px;color:#ff0066;text-align:center;font-style:italic;'>"{insight}"</p>",unsafe_allow_html=True)
+        st.markdown(f"<p style='font-size:22px;color:#ff0066;text-align:center;font-style:italic;'>{insight}</p>", unsafe_allow_html=True)
 
         # PDF NEON MERAH
         buffer = BytesIO()
