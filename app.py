@@ -61,7 +61,7 @@ if st.button("🔥 PROSES BLUEPRINT JIWA",type="primary"):
 
         bulan = tanggal.month
         profiles = ["1/3","2/4","3/5","4/6","5/1","6/2","1/4","2/5","3/6","4/1","5/2","6/3"]
-        profile = profiles[(bulan-1)%12
+        profile = profiles[(bulan-1)%12]
 
         insight = {
             "Generator":"Lo itu MESIN ENERGI HIDUP. Kalau lo seneng, semua ikut nyala.",
