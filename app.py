@@ -5,7 +5,8 @@ import base64
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
-from reportlab.lib.colors import black, red, white, colors
+from reportlab.lib.colors import black, red, HexColor
+from reportlab.lib import colors
 
 # ====================================
 # TAMPILAN NEON MERAH HITAM
@@ -97,7 +98,7 @@ if st.button("🔥 PROSES BLUEPRINT JIWA", type="primary"):
         p.drawCentredText(width/2, height-3.2*inch,f"{tgl_str} | {jam_str} | {kota}")
         p.setStrokeColor(red)
         p.line(1*inch,height-3.8*inch,width-1*inch,height-3.8*inch)
-        p.setFillColor(white)
+        p.setFillColor(HexColor("#FFFFFF"))
         p.setFont("Helvetica-Bold",28)
         y = height-4.5*inch
         p.drawCentredText(width/2, y, f"TIPE: {tipe}")
