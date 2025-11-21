@@ -1,117 +1,124 @@
 import streamlit as st
-from datetime import datetime
-from io import BytesIO
+from datetime import datetime, date, time
+import pdfkit
+import tempfile
 import base64
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-from reportlab.lib.units import inch
-from reportlab.lib.colors import black, red, HexColor
-from reportlab.lib import colors
+import pytz
 
-# ====================================
-# TAMPILAN NEON MERAH HITAM
-# ====================================
-st.set_page_config(page_title="Blueprint Jiwa", page_icon="🔮", layout="centered")
-st.markdown("""
-<style>
-    .main {background-color:#000000;}
-    .stButton>button {background:#ff0066;color:white;width:100%;height:60px;font-size:22px;border-radius:50px;}
-    .stTextInput>div>div>input {background-color:#1e1e1e;color:white;border:1px solid #ff0066}
-    .stDateInput>div>div>div>input {background-color:#1e1e1e;color:white;border:1px solid #ff0066}
-    .stTimeInput>div>div>input {background-color:#1e1e1e;color:white;border:1px solid #ff0066}
-</style>""", unsafe_allow_html=True)
+# ============================================================
+#   KONVERSI JAM LOKAL → UTC (WAJIB UNTUK HUMAN DESIGN)
+# ============================================================
 
-st.title("🔮 BLUEPRINT JIWA")
-st.caption("by Yosep × Rhea — Desember 2025 Edition")
+def to_utc(tanggal: date, jam: time, timezone="Asia/Jakarta"):
+    local = pytz.timezone(timezone)
+    dt_local = local.localize(datetime.combine(tanggal, jam))
+    dt_utc = dt_local.astimezone(pytz.utc)
+    return dt_utc
 
-col1, col2 = st.columns(2)
-with col1:
-    nama = st.text_input("Nama Lengkap", placeholder="Masukkan nama lengkap")
-with col2:
-    kota = st.text_input("Kota Kelahiran", placeholder="Jakarta / Surabaya / dll")
 
-tanggal = st.date_input(
-    "Tanggal Lahir",
-    min_value=datetime(1950,1,1),
-    max_value=datetime(2030,12,31),
-    value=datetime(2000,1,1)
-)
+# ============================================================
+#   LOGIKA HITUNG HUMAN DESIGN SEDERHANA (MVP)
+#   (nanti bisa kita upgrade ke kalkulasi gate-channel)
+# ============================================================
 
-jam = st.time_input("Jam Lahir (lokal)", value=datetime.now().time())
-
-if st.button("🔥 PROSES BLUEPRINT JIWA", type="primary"):
-    if not nama.strip() or not kota.strip():
-        st.error("Nama & kota wajib diisi bro!")
+def hitung_tipe(jam_str):
+    h = int(jam_str.split(":")[0])
+    if 6 <= h < 12:
+        return "Projector"
+    elif 12 <= h < 18:
+        return "Generator"
+    elif 18 <= h < 22:
+        return "Manifesting Generator"
+    elif 22 <= h or h < 2:
+        return "Manifestor"
     else:
-        tgl_str = tanggal.strftime("%d %B %Y")
-        jam_str = jam.strftime("%H:%M")
+        return "Reflector"
 
-        # Hitungan dummy upgraded
-        h = jam.hour
-        if 6<=h<12: tipe = "Projector"
-        elif 12<=h<18: tipe = "Generator"
-        elif 18<=h<22: tipe = "Manifesting Generator"
-        elif h>=22 or h<2: tipe = "Manifestor"
-        else: tipe = "Reflector"
+def hitung_authority(date_str):
+    d = int(date_str.split("-")[-1])
+    if d % 5 == 0:
+        return "Emotional"
+    elif d % 3 == 0:
+        return "Sacral"
+    elif d % 2 == 0:
+        return "Splenic"
+    else:
+        return "Ego"
 
-        d = tanggal.day
-        if d%5==0: authority = "Emotional"
-        elif d%3==0: authority = "Sacral"
-        elif d%2==0: authority = "Splenic"
-        else: authority = "Ego"
+def hitung_profile(date_str):
+    bulan = int(date_str.split("-")[1])
+    profiles = ["1/3", "2/4", "3/5", "4/6", "5/1", "6/2"]
+    return profiles[(bulan - 1) % 6]
 
-        bulan = tanggal.month
-        profiles = ["1/3","2/4","3/5","4/6","5/1","6/2","1/4","2/5","3/6","4/1","5/2","6/3"]
-        profile = profiles[(bulan-1)%12]
+def insight_yosep(tipe):
+    mapping = {
+        "Generator": "Lo itu mesin energi hidup, Bos. Kalau lo happy, semua orang happy.",
+        "Manifesting Generator": "Gerak cepat, adaptif, lompat-lompat tapi hasil selalu kenceng.",
+        "Projector": "Lo itu pembaca manusia. Bukan tenaga, tapi arah.",
+        "Manifestor": "Lo suka ngegas dulu, mikir belakangan. Wajar, energi lo emang buat mulai.",
+        "Reflector": "Lo itu cermin hidup. Lingkungan bikin lo bersinar atau redup."
+    }
+    return mapping.get(tipe, "Unik, beda, dan punya jalur sendiri.")
 
-        insight = {
-            "Generator":"Lo itu MESIN ENERGI HIDUP. Kalau lo seneng, semua ikut nyala.",
-            "Manifesting Generator":"Multi-tasking master. Gerak cepet, lompat-lompat, hasil gila.",
-            "Projector":"Lo pembaca manusia level dewa. Energi lo buat NGARAHIN, bukan ngegas sendiri.",
-            "Manifestor":"Lo initiator bawaannya. Ngegas dulu, mikir belakangan — itu DNA lo.",
-            "Reflector":"Lo cermin masyarakat. Lingkungan bagus = lo bersinar terang."
-        }.get(tipe,"Lo langka bro, jalur lo beda sendiri.")
 
-        sun_gate = ((tanggal.toordinal() + jam.hour*3600 + jam.minute*60) % 64) + 1
+# ============================================================
+#                  STREAMLIT APP
+# ============================================================
 
-        st.balloons()
-        st.success(f"Blueprint {nama.upper()} SELESAI!")
+st.title("🔮 Blueprint Jiwa — Quick Reader (MVP UTC Version)")
+st.caption("Hitungan Blueprint sudah dikoreksi pakai UTC (standar Human Design)")
 
-        st.markdown(f"<h2 style='color:#ff0066;text-align:center;text-shadow:0 0 10px #ff0066'>✦ TIPE: {tipe}</h2>",unsafe_allow_html=True)
-        st.write(f"**Authority:** {authority}")
-        st.write(f"**Profile:** {profile}")
-        st.write(f"**Sun Gate Approx:** {sun_gate}")
-        st.markdown(f"<p style='font-size:22px;color:#ff0066;text-align:center;font-style:italic;'>{insight}</p>", unsafe_allow_html=True)
+nama = st.text_input("Nama")
+tanggal = st.date_input("Tanggal Lahir")
+jam = st.time_input("Jam Lahir (Lokal)")
+kota = st.text_input("Kota Lahir (opsional)")
 
-        # PDF NEON MERAH
-        buffer = BytesIO()
-        p = canvas.Canvas(buffer, pagesize=letter)
-        width, height = letter
-        p.setFillColor(black)
-        p.rect(0,0,width,height,fill=1,stroke=0)
-        p.setFillColor(red)
-        p.setFont("Helvetica-Bold",48)
-        p.drawCentredText(width/2, height-1.5*inch,"BLUEPRINT JIWA")
-        p.setFont("Helvetica-Bold",36)
-        p.drawCentredText(width/2, height-2.5*inch,nama.upper())
-        p.setFont("Helvetica",18)
-        p.drawCentredText(width/2, height-3.2*inch,f"{tgl_str} | {jam_str} | {kota}")
-        p.setStrokeColor(red)
-        p.line(1*inch,height-3.8*inch,width-1*inch,height-3.8*inch)
-        p.setFillColor(HexColor("#FFFFFF"))
-        p.setFont("Helvetica-Bold",28)
-        y = height-4.5*inch
-        p.drawCentredText(width/2, y, f"TIPE: {tipe}")
-        y -= 50; p.drawCentredText(width/2, y, f"AUTHORITY: {authority}")
-        y -= 50; p.drawCentredText(width/2, y, f"PROFILE: {profile}")
-        y -= 50; p.drawCentredText(width/2, y, f"SUN GATE: {sun_gate}")
-        y -= 80; p.setFont("Helvetica-Oblique",20)
-        p.drawCentredText(width/2, y, f'"{insight}"')
-        y -= 100; p.setFont("Helvetica",12); p.setFillColor(colors.grey)
-        p.drawCentredText(width/2, y, "Powered by Yosep × Rhea • Desember 2025")
-        p.save()
-        buffer.seek(0)
+if st.button("Proses Blueprint"):
+    # =====================
+    #   Convert ke UTC
+    # =====================
+    dt_utc = to_utc(tanggal, jam)
+    
+    utc_time_str = dt_utc.strftime("%H:%M")
+    utc_date_str = dt_utc.strftime("%Y-%m-%d")
 
-        b64 = base64.b64encode(buffer.read()).decode()
-        href = f'<a href="data:application/pdf;base64,{b64}" download="Blueprint_Jiwa_{nama.replace(" ","_")}.pdf" target="_blank"><button style="background:#ff0066;color:white;padding:20px 50px;border:none;border-radius:50px;font-size:22px;cursor:pointer;margin-top:30px;">📥 DOWNLOAD PDF NEON MERAH</button></a>'
-        st.markdown(href, unsafe_allow_html=True)
+    # =====================
+    #   HITUNG HD (MVP)
+    # =====================
+    tipe = hitung_tipe(utc_time_str)
+    authority = hitung_authority(utc_date_str)
+    profile = hitung_profile(utc_date_str)
+    insight = insight_yosep(tipe)
+
+    # =====================
+    #   TAMPILKAN
+    # =====================
+    st.subheader(f"✨ Blueprint untuk {nama}")
+    st.write(f"**Tipe:** {tipe}")
+    st.write(f"**Authority:** {authority}")
+    st.write(f"**Profile:** {profile}")
+    st.write(f"**Insight Yosep-style:** {insight}")
+    st.info(f"⏱ Perhitungan berdasarkan waktu **UTC**: {utc_date_str} {utc_time_str}")
+
+    # =====================
+    #   GENERATE PDF
+    # =====================
+    html = f"""
+    <h2>Blueprint Jiwa — {nama}</h2>
+    <p><b>Tanggal (UTC):</b> {utc_date_str}</p>
+    <p><b>Jam (UTC):</b> {utc_time_str}</p>
+    <p><b>Kota:</b> {kota}</p>
+    <hr>
+    <p><b>Tipe:</b> {tipe}</p>
+    <p><b>Authority:</b> {authority}</p>
+    <p><b>Profile:</b> {profile}</p>
+    <p><b>Insight Yosep:</b> {insight}</p>
+    """
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as f:
+        pdfkit.from_string(html, f.name)
+        pdf_bytes = f.read()
+
+    b64 = base64.b64encode(pdf_bytes).decode()
+    href = f'<a href="data:application/pdf;base64,{b64}" download="Blueprint_{nama}.pdf">📥 Download PDF</a>'
+    st.markdown(href, unsafe_allow_html=True)
