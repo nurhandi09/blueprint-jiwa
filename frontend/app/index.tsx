@@ -1,7 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { storage } from "@/src/utils/storage";
+import { captureRef } from "react-native-view-shot";
+import * as MediaLibrary from "expo-media-library";
+import * as Sharing from "expo-sharing";
 
 const API = `${process.env.EXPO_PUBLIC_BACKEND_URL}/api`;
 // Warm off-white surface + deep green typography preserved from previous approved design.
@@ -35,6 +38,14 @@ const text = {
     helper: "Format tanggal: DD-MM-YYYY",
     again: "Buat ulang",
     resultHeading: "CETAK BIRU KAMU",
+    save: "SIMPAN HASIL",
+    share: "BAGIKAN",
+    saved: "Kartu Cetak Biru tersimpan di galeri.",
+    permDenied: "Izin galeri ditolak. Aktifkan di Pengaturan untuk menyimpan kartu.",
+    shareUnavailable: "Fitur bagikan belum tersedia di perangkat ini.",
+    err: "Gagal menyiapkan kartu.",
+    callout: "Ini adalah pola unikmu. Gunakan sebagai peta untuk lebih mengenali cara alami dirimu menjalani kehidupan.",
+    poweredBy: "Berdasarkan Human Design",
   },
   en: {
     name: "Name",
@@ -49,6 +60,14 @@ const text = {
     helper: "Date format: DD-MM-YYYY",
     again: "Start over",
     resultHeading: "YOUR CETAK BIRU",
+    save: "SAVE RESULT",
+    share: "SHARE",
+    saved: "Cetak Biru card saved to your gallery.",
+    permDenied: "Gallery permission denied. Enable it in Settings to save.",
+    shareUnavailable: "Sharing is not available on this device.",
+    err: "Could not prepare the card.",
+    callout: "This is your unique pattern. Use it as a map to better recognise your natural way of moving through life.",
+    poweredBy: "Based on Human Design",
   },
 };
 
@@ -66,6 +85,15 @@ export default function Index() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<Blueprint | null>(null);
+  const [busy, setBusy] = useState<"" | "save" | "share">("");
+  const [toast, setToast] = useState<{ msg: string; tone: "ok" | "err" } | null>(null);
+  const shareCardRef = useRef<View>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const h = setTimeout(() => setToast(null), 3200);
+    return () => clearTimeout(h);
+  }, [toast]);
 
   useEffect(() => {
     fetch(`${API}/cities`).then(r => r.json()).then(setCities).catch(() => setError("Koneksi belum tersedia."));
@@ -105,6 +133,49 @@ export default function Index() {
     }
   };
 
+  const captureCard = async (): Promise<string> => {
+    if (!shareCardRef.current) throw new Error("card-not-ready");
+    const uri = await captureRef(shareCardRef, { format: "png", quality: 1, result: "tmpfile" });
+    return uri;
+  };
+
+  const onSave = async () => {
+    if (busy) return;
+    setBusy("save");
+    try {
+      const perm = await MediaLibrary.requestPermissionsAsync(true);
+      if (!perm.granted) {
+        setToast({ msg: t.permDenied, tone: "err" });
+        return;
+      }
+      const uri = await captureCard();
+      await MediaLibrary.saveToLibraryAsync(uri);
+      setToast({ msg: t.saved, tone: "ok" });
+    } catch {
+      setToast({ msg: t.err, tone: "err" });
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const onShare = async () => {
+    if (busy) return;
+    setBusy("share");
+    try {
+      const available = await Sharing.isAvailableAsync();
+      if (!available) {
+        setToast({ msg: t.shareUnavailable, tone: "err" });
+        return;
+      }
+      const uri = await captureCard();
+      await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: "Cetak Biru" });
+    } catch {
+      setToast({ msg: t.err, tone: "err" });
+    } finally {
+      setBusy("");
+    }
+  };
+
   if (result) return (
     <SafeAreaView style={s.safe}>
       <ScrollView contentContainerStyle={s.content}>
@@ -128,13 +199,64 @@ export default function Index() {
         </View>
         <View style={s.callout}>
           <Ionicons name="sparkles-outline" size={24} color={C.accent} />
-          <Text style={s.calloutText}>
-            {lang === "id"
-              ? "Ini adalah pola unikmu. Gunakan sebagai peta untuk lebih mengenali cara alami dirimu menjalani kehidupan."
-              : "This is your unique pattern. Use it as a map to better recognise your natural way of moving through life."}
-          </Text>
+          <Text style={s.calloutText}>{t.callout}</Text>
         </View>
+        <View style={s.actions}>
+          <Pressable testID="save-result-button" style={[s.actionBtn, s.actionPrimary, busy === "save" && s.disabled]} onPress={onSave} disabled={!!busy}>
+            {busy === "save" ? <ActivityIndicator color={C.white} /> : (
+              <>
+                <Ionicons name="download-outline" size={18} color={C.white} />
+                <Text style={s.actionPrimaryText}>{t.save}</Text>
+              </>
+            )}
+          </Pressable>
+          <Pressable testID="share-result-button" style={[s.actionBtn, s.actionSecondary, busy === "share" && s.disabled]} onPress={onShare} disabled={!!busy}>
+            {busy === "share" ? <ActivityIndicator color={C.accent} /> : (
+              <>
+                <Ionicons name="share-outline" size={18} color={C.accent} />
+                <Text style={s.actionSecondaryText}>{t.share}</Text>
+              </>
+            )}
+          </Pressable>
+        </View>
+        {toast ? (
+          <View testID="result-toast" style={[s.toast, toast.tone === "err" && s.toastErr]}>
+            <Text style={[s.toastText, toast.tone === "err" && s.toastErrText]}>{toast.msg}</Text>
+          </View>
+        ) : null}
       </ScrollView>
+      {/* Off-screen branded share card - not visible, only for image capture */}
+      <View style={s.cardStage} collapsable={false}>
+        <View ref={shareCardRef} collapsable={false} style={s.shareCard} testID="share-card">
+          <View style={s.shareCardHeader}>
+            <View style={s.shareCardDot} />
+            <Text style={s.shareCardBrand}>CETAK BIRU</Text>
+          </View>
+          <Text style={s.shareCardEyebrow}>CETAK BIRU / BLUEPRINT</Text>
+          <Text style={s.shareCardHeading}>{t.resultHeading}</Text>
+          <View style={s.shareCardDivider} />
+          <Text style={s.shareCardName}>{result.name}</Text>
+          <Text style={s.shareCardMeta}>{result.city.name}, {result.city.country}</Text>
+          <Text style={s.shareCardMeta}>{result.birth_date} · {result.birth_time}</Text>
+          <View style={s.shareCardGrid}>
+            {[
+              ["TYPE", result.type],
+              ["AUTHORITY", result.authority],
+              ["PROFILE", result.profile],
+              ["STRATEGY", result.strategy],
+            ].map(([label, value]) => (
+              <View key={label} style={s.shareCardCell}>
+                <Text style={s.shareCardCellLabel}>{label}</Text>
+                <Text style={s.shareCardCellValue}>{value}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={s.shareCardCallout}>
+            <Text style={s.shareCardCalloutText}>{t.callout}</Text>
+          </View>
+          <Text style={s.shareCardFooter}>{t.poweredBy}</Text>
+        </View>
+      </View>
     </SafeAreaView>
   );
 
@@ -278,4 +400,35 @@ const s = StyleSheet.create({
   value: { color: C.forest, fontSize: 18, fontWeight: "700", lineHeight: 23 },
   callout: { flexDirection: "row", gap: 12, backgroundColor: C.accentSoft, padding: 18, marginTop: 18 },
   calloutText: { flex: 1, color: C.ink, fontSize: 15, lineHeight: 23 },
+
+  // Actions row (Save / Share)
+  actions: { flexDirection: "row", gap: 12, marginTop: 22 },
+  actionBtn: { flex: 1, minHeight: 52, borderRadius: 6, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8 },
+  actionPrimary: { backgroundColor: C.accent },
+  actionPrimaryText: { color: C.white, fontSize: 13, fontWeight: "800", letterSpacing: 1.5 },
+  actionSecondary: { borderWidth: 1, borderColor: C.accent, backgroundColor: C.white },
+  actionSecondaryText: { color: C.accent, fontSize: 13, fontWeight: "800", letterSpacing: 1.5 },
+  toast: { marginTop: 16, padding: 14, borderRadius: 6, backgroundColor: C.accentSoft },
+  toastText: { color: C.forest, fontSize: 14, lineHeight: 20 },
+  toastErr: { backgroundColor: "#F5E1DC" },
+  toastErrText: { color: "#B14A3A" },
+
+  // Off-screen branded share card (captured by view-shot)
+  cardStage: { position: "absolute", left: -10000, top: 0, pointerEvents: "none" },
+  shareCard: { width: 1080, padding: 72, backgroundColor: C.paper },
+  shareCardHeader: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 36 },
+  shareCardDot: { width: 22, height: 22, borderRadius: 11, backgroundColor: C.accent },
+  shareCardBrand: { color: C.forest, fontSize: 30, fontWeight: "800", letterSpacing: 3 },
+  shareCardEyebrow: { color: C.accent, fontSize: 18, fontWeight: "700", letterSpacing: 4, marginBottom: 18 },
+  shareCardHeading: { color: C.forest, fontSize: 68, fontFamily: "Georgia", fontWeight: "600", lineHeight: 72, marginBottom: 24 },
+  shareCardDivider: { height: 2, backgroundColor: C.accent, width: 96, marginBottom: 24 },
+  shareCardName: { color: C.forest, fontSize: 40, fontWeight: "700", marginBottom: 12 },
+  shareCardMeta: { color: C.muted, fontSize: 22, lineHeight: 30 },
+  shareCardGrid: { flexDirection: "row", flexWrap: "wrap", gap: 20, marginTop: 42 },
+  shareCardCell: { width: 458, minHeight: 160, backgroundColor: C.white, borderWidth: 1, borderColor: C.deep, padding: 26, justifyContent: "space-between" },
+  shareCardCellLabel: { color: C.accent, fontSize: 18, fontWeight: "700", letterSpacing: 3 },
+  shareCardCellValue: { color: C.forest, fontSize: 36, fontWeight: "700", lineHeight: 44 },
+  shareCardCallout: { backgroundColor: C.accentSoft, padding: 32, marginTop: 42 },
+  shareCardCalloutText: { color: C.ink, fontSize: 24, lineHeight: 36 },
+  shareCardFooter: { color: C.muted, fontSize: 18, letterSpacing: 3, marginTop: 42, textAlign: "center", textTransform: "uppercase" },
 });

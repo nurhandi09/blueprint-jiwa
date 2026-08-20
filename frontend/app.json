@@ -28,6 +28,14 @@
     "plugins": [
       "expo-router",
       [
+        "expo-media-library",
+        {
+          "photosPermission": "Simpan kartu Cetak Biru ke galeri foto",
+          "savePhotosPermission": "Simpan kartu Cetak Biru ke galeri foto",
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-image.png",
