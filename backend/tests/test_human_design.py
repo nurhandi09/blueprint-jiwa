@@ -72,6 +72,32 @@ CHARTS = [
         },
     },
     {
+        "label": "Sarah",
+        "birth_date": "15-08-2013",
+        "birth_time": "05:44",
+        "timezone": "Asia/Jakarta",
+        "expected": {
+            "type": "Manifesting Generator",
+            "authority": "Emotional",
+            "profile": "4/6",
+            "inner_authority": "Emotional",
+            "authority_process": "Emotional",
+        },
+    },
+    {
+        "label": "Bryan",
+        "birth_date": "03-09-2007",
+        "birth_time": "07:18",
+        "timezone": "Asia/Jakarta",
+        "expected": {
+            "type": "Generator",
+            "authority": "Emotional",
+            "profile": "5/1",
+            "inner_authority": "Emotional",
+            "authority_process": "Emotional",
+        },
+    },
+    {
         # User provided the triple "Manifesting Generator / Emotional / 4/6"
         # without a matching name/birth data. Kept as an unfilled slot.
         "label": "Chart 5 (birth data pending)",
