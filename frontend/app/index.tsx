@@ -130,8 +130,8 @@ export default function Index() {
           <Ionicons name="sparkles-outline" size={24} color={C.accent} />
           <Text style={s.calloutText}>
             {lang === "id"
-              ? "Dihitung dari posisi 13 tubuh langit saat lahir dan 88° matahari sebelum lahir."
-              : "Calculated from 13 celestial bodies at birth and 88° of solar arc before birth."}
+              ? "Ini adalah pola unikmu. Gunakan sebagai peta untuk lebih mengenali cara alami dirimu menjalani kehidupan."
+              : "This is your unique pattern. Use it as a map to better recognise your natural way of moving through life."}
           </Text>
         </View>
       </ScrollView>
