@@ -18,7 +18,7 @@ Strict specification:
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 from zoneinfo import ZoneInfo
 
 import swisseph as swe
@@ -230,20 +230,34 @@ def _determine_type(centers: Set[str], graph: Dict[str, Set[str]]) -> str:
     return "Projector"
 
 
-def _determine_authority(hd_type: str, centers: Set[str], graph: Dict[str, Set[str]]) -> str:
+def _determine_authority(
+    hd_type: str,
+    centers: Set[str],
+    graph: Dict[str, Set[str]],
+) -> Tuple[str, Optional[str], str]:
+    """Return (public_authority, inner_authority, authority_process).
+
+    - public_authority: user-facing label (may equal inner_authority).
+    - inner_authority: the mechanical Inner Authority; None for Reflectors and
+      Mental Projectors (they have no Inner Authority).
+    - authority_process: the felt/lived process (Emotional wave, Sacral response,
+      Splenic hunch, Ego, Self-Projected, Mental / Lunar cycle).
+    """
     if "SolarPlexus" in centers:
-        return "Emotional"
+        return "Emotional", "Emotional", "Emotional"
     if "Sacral" in centers:
-        return "Sacral"
+        return "Sacral", "Sacral", "Sacral"
     if "Spleen" in centers:
-        return "Splenic"
+        return "Splenic", "Splenic", "Splenic"
     if "Heart" in centers and "Throat" in centers and _bfs_reaches(graph, "Heart", "Throat"):
-        return "Ego"
+        return "Ego", "Ego", "Ego"
     if "G" in centers and "Throat" in centers and _bfs_reaches(graph, "G", "Throat"):
-        return "Self-Projected"
+        return "Self-Projected", "Self-Projected", "Self-Projected"
     if hd_type == "Reflector":
-        return "Lunar"
-    return "Mental"
+        # Reflectors have NO inner authority; they run a Lunar cycle process.
+        return "Lunar", None, "Lunar"
+    # Mental Projector: no inner authority, uses environment/sounding boards.
+    return "Mental", None, "Mental"
 
 
 def _strategy_for(hd_type: str) -> str:
@@ -288,12 +302,14 @@ def calculate_human_design(
 
     centers, defined_channels, graph = _defined_centers_and_channels(active_gates)
     hd_type = _determine_type(centers, graph)
-    authority = _determine_authority(hd_type, centers, graph)
+    authority, inner_authority, authority_process = _determine_authority(hd_type, centers, graph)
     profile = f"{int(personality['Sun']['line'])}/{int(design['Sun']['line'])}"
 
     return {
         "type": hd_type,
         "authority": authority,
+        "inner_authority": inner_authority,
+        "authority_process": authority_process,
         "profile": profile,
         "strategy": _strategy_for(hd_type),
         "personality": personality,

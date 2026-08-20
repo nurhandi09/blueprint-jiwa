@@ -1,12 +1,9 @@
 """Regression tests for the Human Design calculation engine.
 
-These charts are used to verify structural correctness of the engine. All 5
-charts must produce a valid Type / Authority / Profile without exceptions and
-the strict internal invariants must hold.
-
-If you have authoritative expected values (e.g. from Jovian Archive or Human
-Design International), fill them into `EXPECTED` below and the tests will
-compare them exactly.
+Charts provided by the user (NOT public celebrity charts). If ANY expected
+value fails, the failure is reported with actual output + defined_centers +
+active_gates so the user can debug. The algorithm is NOT tuned to force a
+pass.
 """
 
 from __future__ import annotations
@@ -26,48 +23,64 @@ from human_design import (
 VALID_TYPES = {"Generator", "Manifesting Generator", "Projector", "Manifestor", "Reflector"}
 VALID_AUTHORITIES = {"Emotional", "Sacral", "Splenic", "Ego", "Self-Projected", "Mental", "Lunar"}
 
-# Reference charts. Fill EXPECTED with (type, authority, profile) tuples when you
-# have authoritative values to compare against.
+# User-provided charts with authoritative expected Type / Authority / Profile.
 CHARTS = [
     {
-        "label": "Yosep (Bandung)",
+        "label": "Yosep",
         "birth_date": "09-12-1976",
         "birth_time": "15:37",
         "timezone": "Asia/Jakarta",
+        "expected": None,  # supplied without authoritative values yet
     },
     {
-        "label": "Ra Uru Hu (founder, Merv 1948)",
-        "birth_date": "09-04-1948",
-        "birth_time": "12:15",
-        "timezone": "Asia/Ashgabat",
+        "label": "Firza",
+        "birth_date": "14-05-1978",
+        "birth_time": "02:00",
+        "timezone": "Asia/Jakarta",
+        "expected": {
+            "type": "Projector",
+            "authority": "Self-Projected",
+            "profile": "5/1",
+            "inner_authority": "Self-Projected",
+            "authority_process": "Self-Projected",
+        },
     },
     {
-        "label": "Barack Obama (Honolulu 1961)",
-        "birth_date": "04-08-1961",
-        "birth_time": "19:24",
-        "timezone": "Pacific/Honolulu",
+        "label": "Tresna",
+        "birth_date": "04-02-1997",
+        "birth_time": "06:30",
+        "timezone": "Asia/Jakarta",
+        "expected": {
+            "type": "Reflector",
+            "authority": "Lunar",
+            "profile": "3/5",
+            "inner_authority": None,
+            "authority_process": "Lunar",
+        },
     },
     {
-        "label": "Oprah Winfrey (Kosciusko MS 1954)",
-        "birth_date": "29-01-1954",
-        "birth_time": "04:30",
-        "timezone": "America/Chicago",
+        "label": "Delicia",
+        "birth_date": "06-10-2008",
+        "birth_time": "07:15",
+        "timezone": "Asia/Jakarta",
+        "expected": {
+            "type": "Manifestor",
+            "authority": "Emotional",
+            "profile": "4/6",
+            "inner_authority": "Emotional",
+            "authority_process": "Emotional",
+        },
     },
     {
-        "label": "Nelson Mandela (Mvezo 1918)",
-        "birth_date": "18-07-1918",
-        "birth_time": "14:54",
-        "timezone": "Africa/Johannesburg",
+        # User provided the triple "Manifesting Generator / Emotional / 4/6"
+        # without a matching name/birth data. Kept as an unfilled slot.
+        "label": "Chart 5 (birth data pending)",
+        "birth_date": None,
+        "birth_time": None,
+        "timezone": None,
+        "expected": {"type": "Manifesting Generator", "authority": "Emotional", "profile": "4/6"},
     },
 ]
-
-# Optional authoritative expected values (fill when known).
-EXPECTED = {
-    # "Ra Uru Hu (founder, Merv 1948)": {"type": "Manifestor", "authority": "Splenic", "profile": "5/1"},
-    # "Barack Obama (Honolulu 1961)":   {"type": "Manifesting Generator", "authority": "Emotional", "profile": "6/2"},
-    # "Oprah Winfrey (Kosciusko MS 1954)": {"type": "Manifesting Generator", "authority": "Sacral", "profile": "3/5"},
-    # "Nelson Mandela (Mvezo 1918)":    {"type": "Projector", "authority": "Splenic", "profile": "1/3"},
-}
 
 
 def _basic_invariants(result):
@@ -81,13 +94,15 @@ def _basic_invariants(result):
             assert 1 <= int(act["gate"]) <= 64
             assert 1 <= int(act["line"]) <= 6
             assert 0.0 <= float(act["longitude"]) < 360.0
-    # Design chart should be 82-95 days before birth (88 deg solar arc).
     diff = result["birth_jd"] - result["design_jd"]
     assert 82.0 <= diff <= 95.0, f"design offset out of range: {diff:.3f} days"
-    # Every defined channel must be in the canonical list.
     for pair in result["defined_channels"]:
         key = tuple(pair)
         assert key in CHANNEL_CENTERS, f"unknown channel {key}"
+    # Reflector <=> inner_authority is None.
+    if result["type"] == "Reflector":
+        assert result["inner_authority"] is None
+        assert result["authority_process"] == "Lunar"
 
 
 def test_structural_invariants():
@@ -98,27 +113,61 @@ def test_structural_invariants():
     assert len(CHANNEL_CENTERS) == 36
 
 
+def _run_chart(chart):
+    if chart["birth_date"] is None:
+        print(f"{chart['label']:<40} SKIP (no birth data supplied)")
+        return None
+    result = calculate_human_design(
+        birth_date=chart["birth_date"],
+        birth_time=chart["birth_time"],
+        timezone_str=chart["timezone"],
+    )
+    _basic_invariants(result)
+    actual = {
+        "type": result["type"],
+        "authority": result["authority"],
+        "profile": result["profile"],
+        "inner_authority": result["inner_authority"],
+        "authority_process": result["authority_process"],
+    }
+    print(
+        f"{chart['label']:<40} -> {actual['type']:<22} {actual['authority']:<16} {actual['profile']:<6} "
+        f"IA={actual['inner_authority']}  process={actual['authority_process']}"
+    )
+    return result, actual
+
+
 def test_charts_all_compute():
     print()
+    failures = []
     for chart in CHARTS:
-        result = calculate_human_design(
-            birth_date=chart["birth_date"],
-            birth_time=chart["birth_time"],
-            timezone_str=chart["timezone"],
-        )
-        _basic_invariants(result)
-        print(
-            f"{chart['label']:<45} "
-            f"-> {result['type']:<22} {result['authority']:<15} {result['profile']}"
-        )
-        exp = EXPECTED.get(chart["label"])
-        if exp:
-            assert result["type"] == exp["type"], (chart["label"], result["type"], exp)
-            assert result["authority"] == exp["authority"], (chart["label"], result["authority"], exp)
-            assert result["profile"] == exp["profile"], (chart["label"], result["profile"], exp)
+        outcome = _run_chart(chart)
+        if outcome is None:
+            continue
+        result, actual = outcome
+        exp = chart.get("expected")
+        if not exp:
+            continue
+        mismatch = {k: (actual.get(k), v) for k, v in exp.items() if actual.get(k) != v}
+        if mismatch:
+            failures.append((chart["label"], mismatch, result))
+
+    if failures:
+        print("\n=== FAILURES (actual vs expected) ===")
+        for label, mismatch, result in failures:
+            print(f"\n{label}:")
+            for k, (got, expected) in mismatch.items():
+                print(f"  {k:<20} got={got!r:<30} expected={expected!r}")
+            print(f"  defined_centers  : {result['defined_centers']}")
+            print(f"  defined_channels : {result['defined_channels']}")
+            print(f"  active_gates     : {result['active_gates']}")
+            print(f"  personality Sun  : gate={result['personality']['Sun']['gate']} line={result['personality']['Sun']['line']} lon={result['personality']['Sun']['longitude']:.4f}")
+            print(f"  design Sun       : gate={result['design']['Sun']['gate']} line={result['design']['Sun']['line']} lon={result['design']['Sun']['longitude']:.4f}")
+            print(f"  birth_jd={result['birth_jd']:.6f}  design_jd={result['design_jd']:.6f}  diff={result['birth_jd']-result['design_jd']:.4f} days")
+        raise AssertionError(f"{len(failures)} chart(s) failed. See report above.")
 
 
 if __name__ == "__main__":
     test_structural_invariants()
     test_charts_all_compute()
-    print("All regression tests passed.")
+    print("\nAll regression tests passed.")

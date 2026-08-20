@@ -138,6 +138,8 @@ class BlueprintResponse(BaseModel):
     type: str
     strategy: str
     authority: str
+    inner_authority: Optional[str] = None
+    authority_process: str
     profile: str
     defined_centers: List[str]
     defined_channels: List[List[int]]
@@ -222,6 +224,8 @@ async def create_blueprint(payload: BirthData):
         type=result["type"],
         strategy=result["strategy"],
         authority=result["authority"],
+        inner_authority=result["inner_authority"],
+        authority_process=result["authority_process"],
         profile=result["profile"],
         defined_centers=list(result["defined_centers"]),
         defined_channels=[list(pair) for pair in result["defined_channels"]],
