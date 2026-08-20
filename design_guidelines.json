@@ -1,0 +1,82 @@
+{
+  "project": {
+    "name": "Lahir Terang / Birthlight",
+    "context": "mobile_web_app / hybrid_fullstack Expo React Native with FastAPI backend",
+    "audience": "Pemula yang ingin memahami Human Design tanpa jargon atau rasa dihakimi",
+    "primary_success_actions": ["submit birth data", "choose a built-in city", "understand type/strategy/authority/profile", "save or revisit blueprint"],
+    "emotional_tone": "grounded, intimate, quietly curious, reassuring",
+    "theme_decision": "Light-first with an optional dark reading mode; birth data is personal and reflective, so warm daylight surfaces reduce intimidation.",
+    "language": "Indonesian default with English toggle"
+  },
+  "design_concepts": [
+    {"name": "Paper Almanac", "probability": 0.28, "fusion": ["editorial astrology", "Japanese stationery", "museum wayfinding"], "direction": "Bone paper, ink lines, terracotta sun marker, generous margins; feels like a personal field guide."},
+    {"name": "Tide Chart", "probability": 0.24, "fusion": ["nautical charts", "soft utility apps", "botanical annotation"], "direction": "Radial orbit motifs and measured linework explain planets without looking like a dashboard."},
+    {"name": "Quiet Observatory", "probability": 0.20, "fusion": ["planetarium signage", "Swiss information design", "ceramic glaze texture"], "direction": "Warm charcoal, cream, brass accents, precise labels; premium but beginner-safe."},
+    {"name": "Pocket Ritual", "probability": 0.16, "fusion": ["wellness journal", "neo-brutalist stickers", "calendar utility"], "direction": "Soft peach and sage with crisp dark borders, short explanations and tactile controls."},
+    {"name": "Dawn Signal", "probability": 0.12, "fusion": ["sunrise photography", "transit maps", "large-format print"], "direction": "A single coral signal guides the flow from birth data to one clear next step."}
+  ],
+  "chosen_direction": {
+    "name": "Paper Almanac / Birthlight",
+    "reason": "It combines the emotional intimacy of a birth journal with the clarity of a museum guide and the quiet precision of an astronomical chart. This breaks the usual mystical purple-gradient pattern and is more welcoming to people who are not tech fluent.",
+    "visual_story": ["Entry: a calm paper-like birth card", "Reveal: planetary marks and a restrained bodygraph", "Understanding: one concept per expandable section", "Action: a plain-language invitation to experiment with strategy"]
+  },
+  "typography": {
+    "heading": {"family": "Cormorant Garamond", "weights": [500, 600], "usage": "screen titles, blueprint name, reflective pull quotes", "sizes": {"h1": "34-42px", "h2": "26-32px", "h3": "20-24px"}},
+    "body": {"family": "Figtree", "weights": [400, 500, 600], "usage": "forms, explanations, buttons, navigation", "sizes": {"body": "16px", "small": "13-14px"}},
+    "rules": ["Never use Inter, Roboto, or generic sans for headings.", "Headlines use tight tracking and leading-tight; explanatory body uses leading-relaxed.", "Labels are uppercase with letter spacing 0.16em.", "Keep the Indonesian and English copy length flexible; avoid text baked into images."]
+  },
+  "colors": {
+    "archetype": "Organic & Earthy",
+    "palette": {"paper": "#F6F0E7", "paper_deep": "#EAE0D2", "ink": "#29302D", "ink_muted": "#5D6862", "forest": "#23483C", "terracotta": "#C85C43", "sun": "#D7A447", "sage": "#B9C9B6", "white": "#FFFDF8"},
+    "rules": ["Use paper as the main background, not a gradient.", "Terracotta is reserved for primary actions and the current planetary signal.", "Forest is for headings, selected states, and high-contrast navigation.", "Never use #000000 or #808080; all neutrals are warm-tinted.", "Maintain at least 4.5:1 for normal text and 3:1 for large text and controls.", "No forbidden AI purple #7351B7; no teal dashboard palette."]
+  },
+  "visual_enhancers": {
+    "texture": "Add a very subtle paper grain/noise overlay at 4-7% opacity; aria-hidden and never behind important text at unreadable contrast.",
+    "illustration": "Use thin SVG orbital arcs, small sun/moon/planet glyphs, and irregular ink dots. Keep decoration secondary to content.",
+    "surfaces": "Flat warm surfaces with 1px ink-tinted borders. Use solid or opaque backgrounds for header, sheets, pickers, and alerts; never complete transparent surfaces.",
+    "icons": "Use lucide-react-native or existing icon hooks; do not use AI emoji characters.",
+    "custom_scrollbar": "On web, style a narrow warm scrollbar; no layout gutter. On native, preserve platform scrolling.",
+    "image_policy": "No photos are required for the MVP. Prefer generated SVG diagrams and typographic explanation over stock imagery. No placeholder URLs."
+  },
+  "navigation": {
+    "header": "Opaque paper header with Birthlight wordmark, language toggle (ID/EN), and a compact help action; visible background, never transparent.",
+    "desktop_web": "Show 3-5 links: Buat Blueprint, Blueprint Saya, Panduan, Tentang; primary CTA Buat Blueprint.",
+    "mobile": "Use a visible top header and a compact bottom navigation only after a blueprint exists: Beranda, Blueprint, Panduan.",
+    "testids": ["app-logo", "language-toggle", "nav-create-blueprint", "nav-my-blueprint", "nav-guide"]
+  },
+  "grids": {
+    "mobile": "Single column, 20px horizontal gutter, 24-32px vertical section spacing.",
+    "tablet_web": "Tetris grid: 1 / 8 / 12 columns, gap 24-32px; dominant blueprint visual spans 8, explanation spans 4, leave breathing room.",
+    "results": "Use a high-density but calm 4-column web grid: summary spans 2, bodygraph spans 2x2, explanation feed spans 2, glossary spans 2.",
+    "rules": ["Grid items must be direct children of grid containers.", "Start with grid-cols-1; align-items:start.", "Do not make equal card squares or fill every cell.", "All bordered containers require p-6 or p-8 internal padding."]
+  },
+  "layouts": {
+    "onboarding": ["Opaque header", "left-aligned welcome title and one-sentence reassurance", "three-step progress marker: Data, Kota, Blueprint", "birth date and time controls", "city picker bottom sheet", "sticky primary CTA with disabled/loading/error states"],
+    "birth_form": {"pattern": "one question per visual block, native date/time pickers via Expo-compatible controls, built-in searchable city list", "copy": {"id": "Masukkan data lahir Anda", "en": "Enter your birth details"}, "helper": {"id": "Jika tidak yakin dengan jam lahir, pilih perkiraan terdekat.", "en": "If you are unsure of your birth time, choose your closest estimate."}},
+    "results": ["summary strip with Type, Strategy, Authority, Profile", "bodygraph-style radial diagram with labeled centers", "beginner explanation cards in numbered order", "What to try today callout", "calculation details and astronomical source disclosure", "save/share/export actions"],
+    "unconventional_choice": "Use an editorial numbered reading sequence instead of a standard tab dashboard; this lowers cognitive load for gaptek users and makes the result feel like a guided reading."
+  },
+  "components": [
+    {"name": "BirthDataForm", "component_path": "/app/frontend/components/BirthDataForm.js", "behavior": "Controlled fields, validation, bilingual labels, focus states, loading state."},
+    {"name": "CityPickerSheet", "component_path": "/app/frontend/components/CityPickerSheet.js", "behavior": "Opaque bottom sheet, search input, built-in city rows with country/timezone; no native select."},
+    {"name": "BlueprintSummary", "component_path": "/app/frontend/components/BlueprintSummary.js", "behavior": "Four readable result blocks with plain-language descriptions."},
+    {"name": "BodygraphMini", "component_path": "/app/frontend/components/BodygraphMini.js", "behavior": "SVG radial diagram; labels remain accessible and tappable."},
+    {"name": "InsightAccordion", "component_path": "/app/frontend/components/InsightAccordion.js", "behavior": "One open section at a time, numbered, animated height/opacity, reduced-motion fallback."},
+    {"name": "LanguageToggle", "component_path": "/app/frontend/components/LanguageToggle.js", "behavior": "Persist locale locally; announce changed language."}
+  ],
+  "motion": {
+    "style": "slow, observational, never gamified",
+    "timings": {"micro": "180ms", "panel": "350ms", "reveal": "450ms"},
+    "interactions": ["button press scales to 0.98", "selected city slides into the form", "result sections stagger by 60ms", "bodygraph arcs draw once on reveal", "hover/focus lifts controls by 1-2px"],
+    "accessibility": "Respect prefers-reduced-motion; replace drawing and parallax with instant opacity changes. Never communicate meaning by motion alone. Avoid transition: all; specify opacity, transform, backgroundColor, borderColor."
+  },
+  "accessibility": {
+    "requirements": ["All buttons, links, inputs, menus, key result values, errors, loading and confirmation messages require data-testid.", "Every input has a visible label and bilingual accessible hint.", "Use native accessible date/time picker controls where platform-supported; do not build calendar logic from scratch.", "Focus rings use forest outline plus 2px offset; focus contrast must exceed default.", "Touch targets minimum 44x44px.", "Do not rely on color alone for selected or defined centers.", "Explain astronomical calculation limitations and timezone handling plainly.", "Use screen-reader labels for SVG bodygraph nodes and decorative aria-hidden for texture."],
+    "sample_testids": ["birth-date-input", "birth-time-input", "city-picker-open-button", "city-search-input", "city-option-jakarta", "birth-form-submit-button", "blueprint-loading", "blueprint-error", "result-type", "result-strategy", "result-authority", "result-profile", "insight-accordion-1", "save-blueprint-button"]
+  },
+  "media": {"required": false, "image_urls": [], "guidance": "Do not add stock imagery to this MVP. If a future editorial page needs imagery, use image_selector_tool only and document each URL by category."},
+  "3d_libraries": {"recommended": false, "reason": "The product needs clarity and trust, not immersion. Use SVG and lightweight Animated APIs; avoid R3F for the MVP.", "future_option": "React Native Skia for an interactive but accessible bodygraph, lazy-loaded and paired with text labels."},
+  "data_and_backend": {"astronomy": "Prototype may return SAMPLE blueprint results, but label them clearly as contoh/mock. Production should calculate real planetary positions through a vetted ephemeris library/data source in FastAPI, with timezone and city coordinates resolved from the built-in city list.", "api_states": ["idle", "validating", "calculating", "success", "sample-success", "error"], "disclosure_copy": {"id": "Hasil contoh untuk prototipe. Perhitungan astronomi nyata akan ditambahkan pada versi produksi.", "en": "Sample result for the prototype. Real astronomical calculation will be added in production."}, "important": "MOCKED: If the current backend returns fixed/example values, show the disclosure beside the results and never imply astronomical accuracy."},
+  "implementation_notes_for_js": ["The workspace uses Expo Router and the requested implementation files are .tsx; if converting or adding implementation guidance for JavaScript, use .js files with React Native StyleSheet and no TypeScript-only syntax.", "Update /app/frontend/app/index.tsx and /app/frontend/app/_layout.tsx only after inspecting existing dependencies.", "Prefer existing icon/font hooks and installed primitives; do not assume web-only Tailwind files exist.", "Keep content left-aligned; do not set App textAlign center.", "Use Sonner only where the platform supports it; on native use an accessible in-app confirmation if Sonner is unavailable."],
+  "general_ui_ux_design_guidelines": ["Use generous spacing, clear hierarchy, and one primary action per screen.", "Never use generic centered layouts, full-screen gradients, or uniform card grids.", "Keep surfaces opaque wherever content sits underneath; glass is optional and must use a solid translucent fill plus blur and border.", "Every interactive element has hover/press/focus/disabled feedback and a stable data-testid.", "Use short, compassionate copy and explain jargon immediately.", "Persist language and draft birth data locally only with clear privacy messaging.", "Validate progressively and preserve entered values after errors.", "Make the result useful even if the user only reads the first screen: Type, Strategy, Authority, Profile and one practical sentence.", "Do not claim Human Design is medical, scientific diagnosis, or fate; frame it as reflective/self-exploration content.", "Test at small phones, large text settings, keyboard open state, offline city picker, API timeout, and reduced motion.", "Use Sonner for web toast notifications when available, never custom inaccessible toast logic.", "Avoid universal transition: all and avoid decorative motion that competes with reading."]
+}

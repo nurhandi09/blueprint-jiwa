@@ -1,0 +1,23 @@
+{
+  "summary": "Retested strict DD-MM-YYYY validation and core mobile preview flow. Public API returns the expected Jakarta blueprint and rejects ISO/impossible dates; city selection, calculation, result display, language toggle, and back navigation pass.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_2.json", "/app/backend/tests/test_blueprint_contract.py", "/app/test_reports/pytest/blueprint_results.xml"],
+  "action_items": ["Align frontend/.env and frontend API configuration with the required EXPO_BACKEND_URL variable; current preview uses EXPO_PUBLIC_BACKEND_URL and the regression test could not obtain EXPO_BACKEND_URL."],
+  "critical_code_review_comments": ["index.tsx uses EXPO_PUBLIC_BACKEND_URL before EXPO_BACKEND_URL, while the environment contract requires EXPO_BACKEND_URL; this is currently masked by the preview environment.", "Result UI exposes only Type, Authority, and Profile as requested."],
+  "updated_files": ["/app/backend/tests/test_blueprint_contract.py", "/app/test_reports/iteration_2.json"],
+  "success_rate": {"backend": "100% direct public requests (pytest harness unavailable due missing EXPO_BACKEND_URL)", "frontend": "100%"},
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_call_test_agent_after_fix": true,
+  "context_for_next_testing_agent": "Public URL: https://birth-chart-app-17.preview.emergentagent.com. Direct POST results: DD 200 => Projector/Mental/4/6; ISO 400; 31-02-1990 400. Mobile viewport 375x667 passed form, language toggle, city picker, calculation, result values, and back navigation.",
+  "rca_of_issue": "Iteration 1's ISO fallback is removed and strict datetime.strptime('%d-%m-%Y %H:%M') now correctly rejects noncanonical and impossible dates. The added pytest file reads EXPO_BACKEND_URL as required, but the checked-in frontend/.env only defines EXPO_PUBLIC_BACKEND_URL, so pytest requests had no URL; direct public endpoint verification passed."
+}
