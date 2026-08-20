@@ -1,16 +1,55 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { storage } from "@/src/utils/storage";
 
 const API = `${process.env.EXPO_PUBLIC_BACKEND_URL}/api`;
-const C = { paper: "#F6F0E7", deep: "#EAE0D2", ink: "#29302D", muted: "#5D6862", forest: "#23483C", coral: "#C85C43", white: "#FFFDF8" };
+// Warm off-white surface + deep green typography preserved from previous approved design.
+// Book-blue #58A4C5 replaces the previous coral accent everywhere.
+const C = {
+  paper: "#F6F0E7",
+  deep: "#EAE0D2",
+  ink: "#29302D",
+  muted: "#5D6862",
+  forest: "#23483C",
+  accent: "#58A4C5",       // book blue
+  accentDeep: "#3E7F9B",   // darker for CTA text contrast
+  accentSoft: "#DDEAF0",
+  white: "#FFFDF8",
+};
 type Lang = "id" | "en";
 type City = { id: string; name: string; country: string; timezone: string };
-type Blueprint = { name: string; type: string; authority: string; profile: string; strategy: string; defined_centers: string[]; city: City; birth_date: string; birth_time: string };
+type Blueprint = { name: string; type: string; authority: string; profile: string; strategy: string; city: City; birth_date: string; birth_time: string };
+
 const text = {
-  id: { name: "Nama", date: "Tanggal lahir", time: "Jam lahir", city: "Tempat lahir", choose: "Pilih kota", search: "Cari kota di dunia...", submit: "Buat blueprint", title: "Kenali pola bawaanmu", intro: "Masukkan data lahir untuk membaca blueprint pribadi dengan cara yang sederhana.", helper: "Format tanggal: DD-MM-YYYY", again: "Buat ulang", empty: "Ketik untuk mencari kota" },
-  en: { name: "Name", date: "Birth date", time: "Birth time", city: "Birth place", choose: "Choose a city", search: "Search cities worldwide...", submit: "Create blueprint", title: "Meet your natural pattern", intro: "Enter your birth details to explore your personal blueprint, simply.", helper: "Date format: DD-MM-YYYY", again: "Create again", empty: "Type to search cities" },
+  id: {
+    name: "Nama",
+    date: "Tanggal lahir",
+    time: "Jam lahir",
+    city: "Kota kelahiran",
+    choose: "Pilih kota",
+    search: "Cari kota di dunia...",
+    submit: "HITUNG CETAK BIRU",
+    title: "Kenali Cetak Birumu",
+    intro: "Masukkan data lahirmu untuk menghitung Cetak Biru berdasarkan Human Design.",
+    helper: "Format tanggal: DD-MM-YYYY",
+    again: "Buat ulang",
+    resultHeading: "CETAK BIRU KAMU",
+  },
+  en: {
+    name: "Name",
+    date: "Birth date",
+    time: "Birth time",
+    city: "Birth city",
+    choose: "Choose a city",
+    search: "Search cities worldwide...",
+    submit: "CALCULATE BLUEPRINT",
+    title: "Meet your Cetak Biru",
+    intro: "Enter your birth data to calculate your Cetak Biru based on Human Design.",
+    helper: "Date format: DD-MM-YYYY",
+    again: "Start over",
+    resultHeading: "YOUR CETAK BIRU",
+  },
 };
 
 export default function Index() {
@@ -30,7 +69,7 @@ export default function Index() {
 
   useEffect(() => {
     fetch(`${API}/cities`).then(r => r.json()).then(setCities).catch(() => setError("Koneksi belum tersedia."));
-    storage.getItem("birthlight-lang").then(v => v && setLang(v as Lang));
+    storage.getItem("cetakbiru-lang").then(v => v && setLang(v as Lang));
   }, []);
 
   useEffect(() => {
@@ -44,7 +83,7 @@ export default function Index() {
     return () => clearTimeout(handle);
   }, [query, picker]);
 
-  const toggle = () => { const next = lang === "id" ? "en" : "id"; setLang(next); storage.setItem("birthlight-lang", next); };
+  const toggle = () => { const next = lang === "id" ? "en" : "id"; setLang(next); storage.setItem("cetakbiru-lang", next); };
 
   const submit = async () => {
     if (!name.trim()) return setError(lang === "id" ? "Masukkan nama terlebih dahulu." : "Enter your name first.");
@@ -52,7 +91,11 @@ export default function Index() {
     setError("");
     setLoading(true);
     try {
-      const response = await fetch(`${API}/blueprint`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name.trim(), birth_date: date, birth_time: time, city_id: city.id }) });
+      const response = await fetch(`${API}/blueprint`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), birth_date: date, birth_time: time, city_id: city.id }),
+      });
       if (!response.ok) throw new Error();
       setResult(await response.json());
     } catch {
@@ -62,8 +105,6 @@ export default function Index() {
     }
   };
 
-  const shownCities = useMemo(() => cities, [cities]);
-
   if (result) return (
     <SafeAreaView style={s.safe}>
       <ScrollView contentContainerStyle={s.content}>
@@ -72,9 +113,11 @@ export default function Index() {
           <Ionicons name="arrow-back" size={18} color={C.forest} />
           <Text style={s.backText}>{t.again}</Text>
         </Pressable>
-        <Text style={s.eyebrow}>BIRTHLIGHT / BLUEPRINT</Text>
-        <Text testID="result-title" style={s.title}>{result.name}</Text>
-        <Text style={s.place}>{result.city.name}, {result.city.country} · {result.birth_date} · {result.birth_time}</Text>
+        <Text style={s.eyebrow}>CETAK BIRU / BLUEPRINT</Text>
+        <Text testID="result-heading" style={s.title}>{t.resultHeading}</Text>
+        <Text testID="result-name" style={s.place}>
+          {result.name} · {result.city.name}, {result.city.country} · {result.birth_date} · {result.birth_time}
+        </Text>
         <View style={s.grid}>
           {([["TYPE", result.type, "result-type"], ["AUTHORITY", result.authority, "result-authority"], ["PROFILE", result.profile, "result-profile"], ["STRATEGY", result.strategy, "result-strategy"]] as string[][]).map(item => (
             <View key={item[0]} style={s.card}>
@@ -84,8 +127,12 @@ export default function Index() {
           ))}
         </View>
         <View style={s.callout}>
-          <Ionicons name="sunny-outline" size={24} color={C.coral} />
-          <Text style={s.calloutText}>{lang === "id" ? "Dihitung dari posisi 13 tubuh langit saat lahir dan 88° matahari sebelum lahir." : "Calculated from 13 celestial bodies at birth and 88° of solar arc before birth."}</Text>
+          <Ionicons name="sparkles-outline" size={24} color={C.accent} />
+          <Text style={s.calloutText}>
+            {lang === "id"
+              ? "Dihitung dari posisi 13 tubuh langit saat lahir dan 88° matahari sebelum lahir."
+              : "Calculated from 13 celestial bodies at birth and 88° of solar arc before birth."}
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -99,7 +146,7 @@ export default function Index() {
           <Text style={s.active}>01 DATA</Text>
           <Text style={s.muted}>— 02 KOTA — 03 HASIL</Text>
         </View>
-        <Text style={s.eyebrow}>BIRTHLIGHT / HUMAN DESIGN</Text>
+        <Text style={s.eyebrow}>CETAK BIRU / HUMAN DESIGN</Text>
         <Text style={s.title}>{t.title}</Text>
         <Text style={s.intro}>{t.intro}</Text>
         <View style={s.form}>
@@ -108,7 +155,7 @@ export default function Index() {
           <Field label={t.time} value={time} onChange={setTime} testID="birth-time-input" placeholder="HH:MM" />
           <Text style={s.label}>{t.city}</Text>
           <Pressable testID="city-picker-open-button" style={s.cityButton} onPress={() => setPicker(true)}>
-            <Ionicons name="location-outline" size={20} color={C.coral} />
+            <Ionicons name="location-outline" size={20} color={C.accent} />
             <Text style={[s.cityText, !city && s.placeholder]}>{city ? `${city.name}, ${city.country}` : t.choose}</Text>
             <Ionicons name="chevron-down" size={18} color={C.muted} />
           </Pressable>
@@ -134,16 +181,25 @@ export default function Index() {
                 <Ionicons name="close" size={24} color={C.ink} />
               </Pressable>
             </View>
-            <TextInput testID="city-search-input" value={query} onChangeText={setQuery} placeholder={t.search} placeholderTextColor={C.muted} style={s.search} autoCorrect={false} autoCapitalize="none" />
+            <TextInput
+              testID="city-search-input"
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t.search}
+              placeholderTextColor={C.muted}
+              style={s.search}
+              autoCorrect={false}
+              autoCapitalize="none"
+            />
             <ScrollView style={s.cityList} keyboardShouldPersistTaps="handled">
               {searching ? <ActivityIndicator color={C.forest} style={{ marginTop: 12 }} /> : null}
-              {shownCities.map(item => (
+              {cities.map(item => (
                 <Pressable testID={`city-option-${item.id}`} key={item.id} style={s.cityRow} onPress={() => { setCity(item); setPicker(false); setQuery(""); }}>
                   <View style={{ flex: 1 }}>
                     <Text style={s.cityName}>{item.name}</Text>
                     <Text style={s.cityCountry}>{item.country} · {item.timezone}</Text>
                   </View>
-                  <Ionicons name="arrow-up-left" size={18} color={C.coral} />
+                  <Ionicons name="arrow-forward" size={18} color={C.accent} />
                 </Pressable>
               ))}
             </ScrollView>
@@ -159,7 +215,7 @@ function Header({ lang, toggle }: { lang: Lang; toggle: () => void }) {
     <View style={s.header}>
       <View style={s.logo}>
         <View style={s.dot} />
-        <Text testID="app-logo" style={s.logoText}>birthlight</Text>
+        <Text testID="app-logo" style={s.logoText}>Cetak Biru</Text>
       </View>
       <Pressable testID="language-toggle" onPress={toggle} style={s.lang}>
         <Text style={s.langText}>{lang.toUpperCase()}</Text>
@@ -183,14 +239,14 @@ const s = StyleSheet.create({
   content: { padding: 20, paddingBottom: 48 },
   header: { height: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: C.deep, marginBottom: 28 },
   logo: { flexDirection: "row", alignItems: "center", gap: 8 },
-  dot: { width: 14, height: 14, borderRadius: 7, backgroundColor: C.coral },
+  dot: { width: 14, height: 14, borderRadius: 7, backgroundColor: C.accent },
   logoText: { color: C.forest, fontSize: 20, fontWeight: "700" },
   lang: { minHeight: 44, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.forest, borderRadius: 22 },
   langText: { color: C.forest, fontSize: 12, fontWeight: "700" },
   progress: { flexDirection: "row", gap: 8, marginBottom: 30 },
-  active: { color: C.coral, fontSize: 11, fontWeight: "700", letterSpacing: 1 },
+  active: { color: C.accent, fontSize: 11, fontWeight: "700", letterSpacing: 1 },
   muted: { color: C.muted, fontSize: 11, fontWeight: "600", letterSpacing: 1 },
-  eyebrow: { color: C.coral, fontSize: 11, fontWeight: "700", letterSpacing: 2, marginBottom: 12 },
+  eyebrow: { color: C.accent, fontSize: 11, fontWeight: "700", letterSpacing: 2, marginBottom: 12 },
   title: { color: C.forest, fontSize: 36, lineHeight: 40, fontFamily: "Georgia", fontWeight: "600", marginBottom: 14 },
   intro: { color: C.muted, fontSize: 16, lineHeight: 25, marginBottom: 30 },
   form: { gap: 18 },
@@ -200,10 +256,10 @@ const s = StyleSheet.create({
   cityText: { flex: 1, color: C.ink, fontSize: 16 },
   placeholder: { color: C.muted },
   helper: { color: C.muted, fontSize: 13, lineHeight: 19 },
-  error: { color: C.coral, backgroundColor: "#F9DDD4", padding: 12, marginTop: 18 },
-  primary: { minHeight: 56, backgroundColor: C.coral, marginTop: 28, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 10 },
+  error: { color: "#B14A3A", backgroundColor: "#F5E1DC", padding: 12, marginTop: 18 },
+  primary: { minHeight: 56, backgroundColor: C.accent, marginTop: 28, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 10 },
   disabled: { opacity: 0.7 },
-  primaryText: { color: C.white, fontSize: 16, fontWeight: "700" },
+  primaryText: { color: C.white, fontSize: 15, fontWeight: "800", letterSpacing: 1.5 },
   shade: { flex: 1, backgroundColor: "rgba(41,48,45,0.35)", justifyContent: "flex-end" },
   sheet: { backgroundColor: C.paper, padding: 20, paddingBottom: 30, height: "80%", borderTopLeftRadius: 24, borderTopRightRadius: 24 },
   handle: { width: 44, height: 4, backgroundColor: C.deep, alignSelf: "center", marginBottom: 20 },
@@ -220,6 +276,6 @@ const s = StyleSheet.create({
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   card: { width: "48%", minHeight: 104, backgroundColor: C.white, borderWidth: 1, borderColor: C.deep, padding: 14, justifyContent: "space-between" },
   value: { color: C.forest, fontSize: 18, fontWeight: "700", lineHeight: 23 },
-  callout: { flexDirection: "row", gap: 12, backgroundColor: "#F8E5DD", padding: 18, marginTop: 18 },
+  callout: { flexDirection: "row", gap: 12, backgroundColor: C.accentSoft, padding: 18, marginTop: 18 },
   calloutText: { flex: 1, color: C.ink, fontSize: 15, lineHeight: 23 },
 });
