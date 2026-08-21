@@ -35,7 +35,7 @@ const text = {
     submit: "HITUNG CETAK BIRU",
     title: "Kenali Cetak Birumu",
     intro: "Masukkan data lahirmu untuk menghitung Cetak Biru berdasarkan Human Design.",
-    helper: "Format tanggal: DD-MM-YYYY",
+    helper: "Ketik 8 digit tanggal dan 4 digit waktu.",
     again: "Buat ulang",
     resultHeading: "CETAK BIRU KAMU",
     save: "SIMPAN HASIL",
@@ -57,7 +57,7 @@ const text = {
     submit: "CALCULATE BLUEPRINT",
     title: "Meet your Cetak Biru",
     intro: "Enter your birth data to calculate your Cetak Biru based on Human Design.",
-    helper: "Date format: DD-MM-YYYY",
+    helper: "Enter 8 digits for date and 4 digits for time.",
     again: "Start over",
     resultHeading: "YOUR CETAK BIRU",
     save: "SAVE RESULT",
@@ -71,12 +71,25 @@ const text = {
   },
 };
 
+const formatBirthDate = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4)}`;
+};
+
+const formatBirthTime = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+};
+
 export default function Index() {
   const [lang, setLang] = useState<Lang>("id");
   const t = text[lang];
   const [name, setName] = useState("");
-  const [date, setDate] = useState("01-01-1990");
-  const [time, setTime] = useState("12:00");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
   const [cities, setCities] = useState<City[]>([]);
   const [city, setCity] = useState<City | null>(null);
   const [query, setQuery] = useState("");
@@ -273,8 +286,8 @@ export default function Index() {
         <Text style={s.intro}>{t.intro}</Text>
         <View style={s.form}>
           <Field label={t.name} value={name} onChange={setName} testID="birth-name-input" placeholder={t.name} />
-          <Field label={t.date} value={date} onChange={setDate} testID="birth-date-input" placeholder="DD-MM-YYYY" />
-          <Field label={t.time} value={time} onChange={setTime} testID="birth-time-input" placeholder="HH:MM" />
+          <Field label={t.date} value={date} onChange={(v) => setDate(formatBirthDate(v))} testID="birth-date-input" placeholder="DDMMYYYY" keyboardType="number-pad" maxLength={10} />
+          <Field label={t.time} value={time} onChange={(v) => setTime(formatBirthTime(v))} testID="birth-time-input" placeholder="HHMM" keyboardType="number-pad" maxLength={5} />
           <Text style={s.label}>{t.city}</Text>
           <Pressable testID="city-picker-open-button" style={s.cityButton} onPress={() => setPicker(true)}>
             <Ionicons name="location-outline" size={20} color={C.accent} />
@@ -347,11 +360,36 @@ function Header({ lang, toggle }: { lang: Lang; toggle: () => void }) {
   );
 }
 
-function Field({ label, value, onChange, testID, placeholder }: { label: string; value: string; onChange: (v: string) => void; testID: string; placeholder: string }) {
+function Field({
+  label,
+  value,
+  onChange,
+  testID,
+  placeholder,
+  keyboardType = "default",
+  maxLength,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  testID: string;
+  placeholder: string;
+  keyboardType?: "default" | "number-pad";
+  maxLength?: number;
+}) {
   return (
     <View>
       <Text style={s.label}>{label}</Text>
-      <TextInput testID={testID} value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={C.muted} style={s.input} />
+      <TextInput
+        testID={testID}
+        value={value}
+        onChangeText={onChange}
+        placeholder={placeholder}
+        placeholderTextColor={C.muted}
+        style={s.input}
+        keyboardType={keyboardType}
+        maxLength={maxLength}
+      />
     </View>
   );
 }
